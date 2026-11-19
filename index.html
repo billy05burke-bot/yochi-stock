@@ -27,6 +27,23 @@
   var f = document.getElementById("app");
   f.addEventListener("load", function () { var w = document.getElementById("wait"); if (w) w.remove(); });
   f.src = APP + location.search + location.hash;
+
+  // Phones clear storage for pages shown inside another site, so the app keeps its login, drafts and waiting saves here instead.
+  var OK = /^https:\/\/([a-z0-9-]+\.googleusercontent\.com|script\.google\.com)$/;
+  var PFX = "yc:";
+  window.addEventListener("message", function (e) {
+    if (!OK.test(e.origin) || !e.data || !e.data.yc) return;
+    try {
+      if (e.data.yc === "get") {
+        var all = {};
+        for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k.indexOf(PFX) === 0) all[k.slice(PFX.length)] = localStorage.getItem(k); }
+        e.source.postMessage({ yc: "all", data: all }, e.origin);
+      } else if (e.data.yc === "set" && typeof e.data.k === "string") {
+        if (e.data.v === "" || e.data.v == null) localStorage.removeItem(PFX + e.data.k);
+        else localStorage.setItem(PFX + e.data.k, String(e.data.v));
+      }
+    } catch (err) {}
+  });
 </script>
 </body>
 </html>
